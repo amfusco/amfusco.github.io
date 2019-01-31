@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html></html>
+    <head>
+     <meta charset="utf-8" />
+     <title> javascript test page</title>
+    </head>
+    <body>
+        <h1> JavaScript</h1>
+        <script>
+        
+            var username = "Dave"; 
+            var myNumber = 42; 
+
+            myNumber = myNumber + 10; 
+
+            console.log(myNumber * 100);
+            console.log(500); 
+
+            var bigNumber = myNumber > 100
+
+            console.log(bigNumber); 
+
+            var username = "Dave"
+
+            var users = ["Dave", 100, "Dan", "Mengyue"]
+            console.log(users[1]);
+
+            var complexUser = {
+                name: "Dave Landry",
+                zip: 02131,
+                color: "red", 
+                dog: true, 
+                greet: function(greeting) {
+                    console.log(greeting + "Dave");
+                } 
+            };
+
+            complexUser.greet("Goodbye");
+
+            console.log(complexUser.color); 
+
+            var sayHello = function(name) {
+                console.log("Hello" + name);
+            }
+
+            sayHello("Dave");
+            sayHello("Lisa");
+            sayHello(complexUser.name); 
+
+            var plusTen = function(num) {
+                return num + 10; 
+            }
+
+            var newNum = plusTen(20); 
+
+            console.log(newNum); 
+
+
+        </script>
+        </body>
+</html>
