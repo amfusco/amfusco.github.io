@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <title>Let's Load Some Data!</title>
+  
+</head>
+<body>
+  <h1 id="title">Data Manipulation page</h1>
+  <svg>
+  </svg>
+    <script>
+
+        d3.csv("./data/csvData.csv", function(error, data) {
+            debugger;
+            data.forEach(function (d, i) {
+                d.export = parseFloat(d.export)
+                d.source = "Dave Made This"; 
+                d.rank = i + 1;
+                console.log (d); 
+            }); 
+
+            var currentData = data.filter(function(d) {
+                return d.year == "2018"; 
+            }); 
+            console.log(currentDat);
+
+            var mexicoData = dataFilter(function (d) {
+                return d.country == "mx"; 
+            }); 
+            console.log(mexicoData); 
+
+            var dataExtent = d3.extent(currentData, function(d) {
+                return d.export; 
+            }); 
+            console.log(dataExtent);
+            
+            var groupedCountries = d3.nest()
+                .key(function (d) {
+                    return d.country; 
+                })
+                .entries(data); 
+
+            console.log("groupedCountries", groupCountries); 
+
+            var yearlyData = d3.nest()
+                .key(function(row) {
+                    return row.year; 
+                })
+            
+            console.log("yearlyData", yearlyData); 
+            debugger;
+        });
+
+    </script>
+    </body>
+</html>

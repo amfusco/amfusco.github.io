@@ -1,0 +1,12 @@
+h1 {
+    color: blue;
+    font-size: 20px;
+    margin: 0;
+  }
+h1#second-title {
+    color: rgb(209, 197, 197);
+  }
+  .italic-title {
+    font-style: italic;
+  }
+  
