@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Women of Color in Congress</title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500" rel="stylesheet">
+  <style>
+    .tooltip {	
+      position: absolute;
+      text-align: center;
+      line-height: 18px;
+      padding: 10px;
+      font-size: 12px;
+      font-family: Roboto;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      pointer-events: none;
+      font-weight: 100;
+    }
+
+    #my-map {
+      margin-top: 0px
+    }
+    h1{
+      font-family: Roboto; 
+      font-weight: 100;
+    }
+  </style>
+</head>
+
+<body>
+  <h1 id="title">Women of Color in Congress</h1>
+  <svg id="my-map"></svg>
+  <script>
+    var width = window.innerWidth - 40;    
+    var height = window.innerHeight - 120; 
+
+    var svg = d3.select("#my-map")
+      .attr("width", width + "px")
+      .attr("height", height + "px");
+
+    d3.queue()
+      .defer(d3.csv, "data/women_of_color_congress.csv")
+      .defer(d3.json, "data/usa.json")
+      .awaitAll(function (error, dataArray) {
+        var womenOfColorRows = dataArray[0]; 
+
+        womenOfColorRows.forEach(function (row) {
+          var ranges = row['Dates of Service'].split(';'); 
+
+          var inOfficePeriods = ranges.map(function(range) { 
+            var rangeAsArray = range.trim().split('-');      
+            return rangeAsArray.map(function(year) {         
+              if (year.trim().toLowerCase() === 'present') {
+                return 2018;
+              } else {
+                return parseInt(year); 
+              }
+            });
+          });
+
+          var totalYearsInOffice = 0; 
+          inOfficePeriods.forEach(function(period) {   
+            var lengthOfPeriod = period[1] - period[0]; 
+            totalYearsInOffice = totalYearsInOffice + lengthOfPeriod; 
+          });
+
+          row['Total Years in Office'] = totalYearsInOffice; 
+        });
+
+      var usaMapJSON = dataArray[1]; 
+
+      var states = usaMapJSON.objects.states.geometries.map(function(geometry) {
+        return geometry.id;
+      });
+
+      var totalsPerState = {
+        ak: 0,
+        al: 0,
+        ar: 0,
+        az: 0,
+        ca: 0,
+        co: 0,
+        ct: 0,
+        dc: 0,
+        de: 0,
+        fl: 0,
+        ga: 0,
+        hi: 0,
+        ia: 0,
+        id: 0,
+        il: 0,
+        in: 0,
+        ks: 0,
+        ky: 0,
+        la: 0,
+        ma: 0,
+        md: 0,
+        me: 0,
+        mi: 0,
+        mn: 0,
+        ms: 0,
+        mt: 0,
+        nc: 0,
+        nd: 0,
+        ne: 0,
+        nh: 0,
+        nj: 0,
+        nm: 0,
+        nv: 0,
+        ny: 0,
+        oh: 0,
+        ok: 0,
+        or: 0,
+        pa: 0,
+        pr: 0,
+        ri: 0,
+        sc: 0,
+        sd: 0,
+        tn: 0,
+        tx: 0,
+        ut: 0,
+        va: 0,
+        vt: 0,
+        wa: 0,
+        wi: 0,
+        wv: 0,
+        wy: 0,
+      }
+
+      
+      womenOfColorRows.forEach(function(row) {
+        var state = row["State"].toLowerCase(); 
+        totalsPerState[state] = totalsPerState[state] + row['Total Years in Office']; 
+      });
+  
+      var totals = Object.keys(totalsPerState).map(function(key) {
+        return totalsPerState[key]; 
+      });
+
+      var domain = d3.extent(totals); 
+
+      var colorScale = d3.scaleLinear()
+        .domain(domain)
+        .range(["rgb(150, 200, 150)", "rgb(0, 100, 0)"]);
+      
+      var geoJSON = topojson.feature(usaMapJSON, usaMapJSON.objects.states);
+
+      var projection = d3.geoAlbersUsa()
+        .fitSize([width, height], geoJSON)
+
+      var path = d3.geoPath()
+        .projection(projection);
+
+      var stateShapesAndData = svg.selectAll("path")
+        .data(geoJSON.features);
+
+      var tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+      var oldColor;
+
+      stateShapesAndData.enter().append("path")
+        .attr("d", function(stateData) { 
+          return path(stateData);
+        })
+        .attr("fill", function(stateData) { 
+          var matches = womenOfColorRows.filter(function(row) {
+            return row.State.toLowerCase() === stateData.id.toLowerCase();
+          });
+
+   
+          if (matches.length > 0) {
+            var sum = 0; 
+            matches.forEach(function(congressLady) {
+              var totalForHer = congressLady['Total Years in Office'];
+              sum = sum + totalForHer;
+            })
+            return colorScale(sum); 
+          } else {
+            return "rgb(200, 200, 200)"; 
+          }
+        })
+        .on('mouseover', function(stateData) { 
+          var matches = womenOfColorRows.filter(function(row) { 
+            return row.State.toLowerCase() === stateData.id.toLowerCase();
+          });
+
+          var stateAbbreviation = stateData.id;
+         
+          var congressPeeps = matches.map(function(match) { return match["Name"] + " (" + match["Party"] + ", " + match["Dates of Service"] + ")"; });
+          var tooltipHtml = "<b>" + stateAbbreviation + "</b><hr>" + congressPeeps.join("<br>"); // We'll do the state abbreviation, followed by a horizontal row, followed by a list of congresswoman names
+          var linesInTooltip = 2 + congressPeeps.length; // Calculate the number of lines the tooltip is going to be (the state, a horizontal row, and each name)
+
+          if (matches.length > 0) {
+            tooltip.transition()
+              .duration(200)
+              .style("opacity", 0.9);
+  
+            tooltip.html(tooltipHtml)
+              .style("left", (d3.event.pageX) + "px")
+              .style("top", (d3.event.pageY - (linesInTooltip * 9) - 10) + "px");
+          }
+
+          oldColor = d3.select(this).attr('fill'); 
+          d3.select(this).attr('fill', '#FFFB14'); 
+        })
+        .on('mouseout', function() { 
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 0);
+
+          d3.select(this).attr('fill', oldColor);
+        });
+    });
+  </script>
+</body>
+
+</html>

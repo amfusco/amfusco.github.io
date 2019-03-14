@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Women of Color in Congress</title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <style>
+    .tooltip {	
+      position: absolute;
+      text-align: center;
+      line-height: 18px;
+      padding: 10px;
+      font-size: 12px;
+      font-family: sans-serif;
+      background-color: rgba(0, 0, 0, 0.75);
+      color: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    #my-map {
+      margin-top: 0px
+    }
+  </style>
+</head>
+
+<body>
+  <h1 id="title">Women of Color in Congress</h1>
+  <svg id="my-map"></svg>
+  <script>
+    var width = window.innerWidth - 40;    // 40 just works to get it to fit on the page
+    var height = window.innerHeight - 120; // 120 just works to get it to fit on the page
+
+    // This is the SVG you have above in the HTML. You're giving it the width and height
+    // you just defined.
+    var svg = d3.select("#my-map")
+      .attr("width", width + "px")
+      .attr("height", height + "px");
+
+    d3.queue()
+      .defer(d3.csv, "data/women_of_color_congress.csv")
+      .defer(d3.json, "data/usa.json")
+      .awaitAll(function (error, dataArray) {
+        var womenOfColorRows = dataArray[0]; // dataArray is going to have two items in it; the first ([0]) is the women_of_color_congress data, and the second ([1]) is usa.json "state shape" data
+
+        // For each row in women_of_color_congress.csv we're going to perform the following, one at a time:
+        womenOfColorRows.forEach(function (row) {
+          var ranges = row['Dates of Service'].split(';'); // "1965-1976; 2002-present" => ["1965-1976", "2002-present"]
+
+          // We wanna take row['Dates of Service'] (e.g., "1965-1976; 2002-present"; it will be different
+          // for each row), and make inOfficePeriods out of it (which will be [[1965, 1976], [2002, 2018]]
+          // for the example given).sdcx
+          var inOfficePeriods = ranges.map(function(range) { // if ranges is ["1965-1976", "2002-present"], range is "1965-1976" the first time this function runs, then "2002-present" the second time
+            var rangeAsArray = range.trim().split('-');      // "1965-1976" => ['1965', '1976']
+            return rangeAsArray.map(function(year) {         // if rangeAsArray is ['1965', '1976'], year is '1965' the first time this function runs, then '1976' the second time
+              if (year.trim().toLowerCase() === 'present') {
+                return 2018;
+              } else {
+                return parseInt(year); // parseInt(year) takes, e.g., "1965" (string) and turns it into 1965 (number) so that we can do math with it
+              }
+            });
+          });
+
+          row['Dates of Service'] = inOfficePeriods; // Overwrite the existing human-readable "Dates of Service" data ("1965-1976; 2002-present") with our more computer-readable data ([[1965, 1976], [2002, 2018]]) so we can use it later
+
+          var totalYearsInOffice = 0; // We're going to add to this so we want to start at zero for the baseline
+          inOfficePeriods.forEach(function(period) {    // Period, for example, might be [1965, 1976] the first time this function is called
+            var lengthOfPeriod = period[1] - period[0]; // Take the final year in office and subtract from the first year in office to get the stretch
+            totalYearsInOffice = totalYearsInOffice + lengthOfPeriod; // Add it to our total every time this function is run (once for each range of years they were in office)
+          });
+
+          row['Total Years in Office'] = totalYearsInOffice; // add a new "column" value to this row so we can save/use our calculated totalYearsInOffice number later for this row
+        });
+
+      var usaMapJSON = dataArray[1]; // Grab the data from usa.json
+
+      // usaMapJSON.objects.states.geometries is going to give us an array of objects that represent each state,
+      // so by mapping over them, we can make a new array (the same length as the original array) consisting of
+      // the data we need.
+      //
+      // Note: mapping over an array like this returns a NEW array with the values you return in each pass; it
+      // doesn't modify the original unless you explicitly do so. See up there in the womenOfColorRows.forEach(...)
+      // where we MODIFY the row (row['Dates of Service'] = inOfficePeriods, etc.)? In that function, we modify
+      // the original data. In this one, though, the function is run for every value in the array and it constructs
+      // a NEW array consisting of each value the function returns. So the variable `states` is going to be a list
+      // of each "state geometry"'s ID (i.e., its abbreviation).
+      //
+      // I think this is important to know, so here's a simple example:
+      //
+      //   var people = [{ name: 'Alanna' }, { name: 'Aishu' }, { name: 'Keegan' }, { name: 'Peter' }];
+      //   var names = people.map(function(person) {
+      //     return person.name.toUpperCase();
+      //   })
+      //
+      // The variable `people` is STILL [{ name: 'Alanna' }, { name: 'Aishu' }, { name: 'Keegan' }, { name: 'Peter' }].
+      // The variable `names` is now ['ALANNA', 'AISHU', 'KEEGAN', 'PETER'].
+      var states = usaMapJSON.objects.states.geometries.map(function(geometry) {
+        return geometry.id;
+      });
+
+      // We're going to use this totalsPerState object to sum all the years women of Congress have spent
+      // in office, per state, so let's initialize all the states to zero so we can add to them.
+      var totalsPerState = {
+        ak: 0,
+        al: 0,
+        ar: 0,
+        az: 0,
+        ca: 0,
+        co: 0,
+        ct: 0,
+        dc: 0,
+        de: 0,
+        fl: 0,
+        ga: 0,
+        hi: 0,
+        ia: 0,
+        id: 0,
+        il: 0,
+        in: 0,
+        ks: 0,
+        ky: 0,
+        la: 0,
+        ma: 0,
+        md: 0,
+        me: 0,
+        mi: 0,
+        mn: 0,
+        ms: 0,
+        mt: 0,
+        nc: 0,
+        nd: 0,
+        ne: 0,
+        nh: 0,
+        nj: 0,
+        nm: 0,
+        nv: 0,
+        ny: 0,
+        oh: 0,
+        ok: 0,
+        or: 0,
+        pa: 0,
+        pr: 0,
+        ri: 0,
+        sc: 0,
+        sd: 0,
+        tn: 0,
+        tx: 0,
+        ut: 0,
+        va: 0,
+        vt: 0,
+        wa: 0,
+        wi: 0,
+        wv: 0,
+        wy: 0,
+      }
+
+      // For every row of data in womenOfColorRows, let's...
+      womenOfColorRows.forEach(function(row) {
+        var state = row["State"].toLowerCase(); // Take their respective state abbreviation and lowercase it so it matches our object above
+        totalsPerState[state] = totalsPerState[state] + row['Total Years in Office']; // ...and add their total years in office to the state total.
+      });
+      // totalsPerState is now something like
+      // {
+      //   ak: 9,
+      //   al: 16,
+      //   ar: 0,
+      //   az: 15,
+      //   ...
+      // }
+
+      // Let's take an array of all the KEYS in the totalsPerState object (i.e., ['ak', 'al', 'ar', 'az'...])...
+      var totals = Object.keys(totalsPerState).map(function(key) {
+        return totalsPerState[key]; // ...and get the value for each key
+      });
+      // The variable `totals` is now something like [9, 16, 0, 6, 0, 15...]
+
+      var domain = d3.extent(totals); // Get the min and max of the `totals` variable (e.g., [0, 112]) which represents the mininum and maximum "years in office total" for each state
+
+      // `colorScale` represents a dynamic function thing that d3 can apply to values
+      // within the range `domain` (between, for example, 0 and 112) and yield a color
+      // scaled to that value. So if `domain` is [0, 112]:
+      //
+      //   0   corresponds to rgb(150, 200, 150)
+      //   56  corresponds to rgb(77, 138, 77)
+      //   112 corresponds to rgb(0, 100, 0)
+      //
+      // ...don't pay strict attention to my math. You see what I mean, though.
+      var colorScale = d3.scaleLinear()
+        .domain(domain)
+        .range(["rgb(150, 200, 150)", "rgb(0, 100, 0)"]);
+
+      // This shit I don't even know what the fuck is going on, but I assume you're feeding
+      // raw coordinate points to this topojson lib and it's going to translate them into
+      // something d3 can consume later. I think you're, like, "narrowing the scope" of
+      // usaMapJSON to only include the `usaMapJSON.objects.states` data objects. If you
+      // need to know what this is actually doing, google "topojson docs" and look for
+      // a reference to the function `feature`.
+      var geoJSON = topojson.feature(usaMapJSON, usaMapJSON.objects.states);
+
+      // Professor used `d3.geoMercator` as the projection, but that motherfucker uses
+      // the entire WORLD. `d3.geoAlbersUsa` plots the points on a map dedicated to the
+      // good ol' USA. USA! USA! USA! Background voice: "go Trump!" (hold for deserved
+      // judgmental silence, followed [hopefully] by sounds of someone being strangled.
+      // CURTAIN DROP. EXIT STAGE LEFT.)
+      var projection = d3.geoAlbersUsa()
+        .fitSize([width, height], geoJSON)
+
+      // Don't know. I believe you're storing, in `path`, a function which will take the
+      // coordinate data from each item in the usaMapJSON.objects.states data (now in
+      // the variable `geoJSON`) and convert it into an SVG path definition string.
+      // That string, the result of calling `path(someStateGeographyData)` will tell the
+      // SVG to render lines onto the screen in the shape of the state.
+      // ...at least, I'm pretty sure.
+      var path = d3.geoPath()
+        .projection(projection);
+
+      // You're telling d3 "Hey, grab all the SVG '<path>' elements (even if they don't)
+      // exist yet) and apply the state data array to them" (the state data array is
+      // geoJSON.features, which effectively contains the stuff in usaMapJSON.objects.states)
+      var stateShapesAndData = svg.selectAll("path")
+        .data(geoJSON.features);
+
+      // We're going to make a plain container element, a <div>, that is INTENDED to hold
+      // our tooltip information (the info about the congresswomen). However, for now,
+      // we're just going to make it invisible. We'll put new text (in HTML) into it every
+      // time we hover over a state, and then make it visible when we do.
+      var tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+      // Let's establish a variable out here real quick, that way when we store a value
+      // in it, it stays in scope every time we reassign it below. If we didn't declare
+      // it out here (instead declaring it inside the function blocks where it's used
+      // below) it would create a NEW variable, every time, within the function where
+      // it was declared... so a new function wouldn't be able to use the existing value.
+      var oldColor;
+
+      // Let's make a new SVG `<path>` element for every piece of data we fed to it earlier...
+      stateShapesAndData.enter().append("path")
+        .attr("d", function(stateData) { // the "d" attribute stores the path data (the state's "shape")
+          return path(stateData);
+        })
+        .attr("fill", function(stateData) { // the "fill" attribute stores the color of the state
+          // Grab the rows where the state data of this particular path (this function is run
+          // for every path) matches the state abbreviation of a row in women_of_color_congress.csv
+          var matches = womenOfColorRows.filter(function(row) {
+            return row.State.toLowerCase() === stateData.id.toLowerCase();
+          });
+
+          // If any women of color have served in Congress for this state...
+          if (matches.length > 0) {
+            var sum = 0; // ...then add up the total years in office for everyone who has served for this state...
+            matches.forEach(function(congressLady) {
+              var totalForHer = congressLady['Total Years in Office'];
+              sum = sum + totalForHer;
+            })
+            return colorScale(sum); // ...and assign a color scaled to the number of years they've served...
+          } else {
+            return "rgb(200, 200, 200)"; // ...or, just make it gray because they're BACKWARDS TRASH
+          }
+        })
+        .on('mouseover', function(stateData) { // When we hover over the state...
+          var matches = womenOfColorRows.filter(function(row) { // ...grab the congresswomen who served in that state again.
+            return row.State.toLowerCase() === stateData.id.toLowerCase();
+          });
+
+          var stateAbbreviation = stateData.id;
+          // Get an array of their names and their parties
+          var congressPeeps = matches.map(function(match) { return match["Name"] + " (" + match["Party"] + ")"; });
+          var tooltipHtml = "<b>" + stateAbbreviation + "</b><hr>" + congressPeeps.join("<br>"); // We'll do the state abbreviation, followed by a horizontal row, followed by a list of congresswoman names
+          var linesInTooltip = 2 + congressPeeps.length; // Calculate the number of lines the tooltip is going to be (the state, a horizontal row, and each name)
+
+          // If anyone has served...
+          if (matches.length > 0) {
+            // ..."fade in" the tooltip box...
+            tooltip.transition()
+              .duration(200)
+              .style("opacity", 0.9);
+  
+            // ...then add the tooltip HTML we stored earlier in `tooltipHtml` and position
+            // the tooltip box above-and-to-the-left of the state...
+            tooltip.html(tooltipHtml)
+              .style("left", (d3.event.pageX) + "px")
+              .style("top", (d3.event.pageY - (linesInTooltip * 18) - 20) + "px");
+          }
+
+          oldColor = d3.select(this).attr('fill'); // ...store the original color to set it back to later...
+          d3.select(this).attr('fill', '#FFFB14'); // ...aaaaand make it yellow now because we're hovering over it.
+        })
+        .on('mouseout', function() { // When our mouse leaves the state...
+          // ...make the tooltip invisible...
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 0);
+
+          // ...and set it back to its original color!
+          d3.select(this).attr('fill', oldColor);
+        });
+    });
+  </script>
+</body>
+
+</html>

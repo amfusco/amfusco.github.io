@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Let's Make a Map!</title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+</head>
+
+<body>
+  <h1 id="title">Dave's Cool World Map</h1>
+  <svg id="my-map"></svg>
+  <script>
+    var width = window.innerWidth;
+    var height = 700;
+
+    d3.queue()
+    .defer(d3.csv, "data/women_of_color_congress.csv")
+    .defer(d3.json, "data/usa.json")
+    .awaitAll(function (error, dataArray) {
+      var womenOfColorRows = dataArray[0];
+
+      womenOfColorRows.forEach(function (row) {
+        var ranges = row['Dates of Service'].split(';');
+
+        var inOfficePeriods = ranges.map(function(range) {
+          var rangeAsArray = range.trim().split('-'); // ['1965', '1976']
+          return rangeAsArray.map(function(year) {
+            if (year.trim().toLowerCase() === 'present') {
+              return 2018;
+            } else {
+              return parseInt(year);
+            }
+          });
+        });
+        // before: "1965-1976; 2002-present"
+        // after: [[1965, 1976], [2002, 2018]]
+
+        var totalYearsInOffice = 0;
+        inOfficePeriods.forEach(function(period) {
+          // period === [1965, 1976]
+          var lengthOfPeriod = period[1] - period[0];
+          totalYearsInOffice = totalYearsInOffice + lengthOfPeriod;
+        })
+
+        row['Dates of Service'] = inOfficePeriods;
+        row['Total Years in Office'] = totalYearsInOffice;
+      });
+
+      var totalsPerState = {};
+      womenOfColorRows.forEach (function(row) {
+        var state = row["State"]; 
+        totalsPerState[state] = totalsPerState[state] || 0;
+        totalsPerState[state] = totalsPerState[state] + row["Total Years in Office"];
+      })
+
+      debugger
+      var domain = d3.extent(totalsPerState, function(row) {
+        debugger 
+        return row['Total Years in Office'];
+      });
+
+      var colorScale = d3.scaleLinear()
+      .domain(domain)
+      .range(["rgb(200, 150, 150)", "rgb(100, 0, 0)"]);
+
+      var usaMapJSON = dataArray[1];
+
+      var geoJSON = topojson.feature(usaMapJSON, usaMapJSON.objects.states);
+
+      var projection = d3.geoMercator()
+      .fitSize([width, height], geoJSON);
+      
+      var path = d3.geoPath()
+      .projection(projection);
+
+      var svg = d3.select("#my-map")
+      .attr("width", width + "px")
+      .attr("height", height + "px");
+
+      var countries = svg.selectAll("path")
+      .data(geoJSON.features);
+
+      countries.enter().append("path")
+      .attr("d", function (feature) {
+        return path(feature);
+      })
+      .attr("fill", function (feature) {
+        var matches = womenOfColorRows.filter(function(row) {
+          return row.State.toLowerCase() === feature.id.toLowerCase();
+        });
+        if (matches.length > 0) {
+          var sum = 0;
+          matches.forEach(function(congressLady) {
+            var totalForHer = congressLady['Total Years in Office'];
+            sum = sum + totalForHer;
+          })
+          return colorScale(sum);
+        } else {
+          return "rgb(200, 200, 200)";
+        }
+      });
+      
+      var points = [{
+        "name": "Boston",
+        "coords": [-71.0589, 42.3601]
+      },
+      {
+        "name": "London",
+        "coords": [-0.1278, 51.5074]
+      },
+      {
+        "name": "Cape Town",
+        "coords": [18.424055, -33.924870]
+      }
+      ];
+      
+      var cities = svg.selectAll("circle")
+      .data(points);
+      
+      cities.enter().append("circle")
+      .attr("transform", function (d) {
+        return "translate(" + projection(d.coords) + ")";
+      })
+      .attr("r", 10)
+      .attr("fill", "cornflowerblue");
+    });
+  </script>
+</body>
+
+</html>
