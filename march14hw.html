@@ -195,8 +195,8 @@
           var stateAbbreviation = stateData.id;
          
           var congressPeeps = matches.map(function(match) { return match["Name"] + " (" + match["Party"] + ", " + match["Dates of Service"] + ")"; });
-          var tooltipHtml = "<b>" + stateAbbreviation + "</b><hr>" + congressPeeps.join("<br>"); // We'll do the state abbreviation, followed by a horizontal row, followed by a list of congresswoman names
-          var linesInTooltip = 2 + congressPeeps.length; // Calculate the number of lines the tooltip is going to be (the state, a horizontal row, and each name)
+          var tooltipHtml = "<b>" + stateAbbreviation + "</b><hr>" + congressPeeps.join("<br>"); 
+          var linesInTooltip = 2 + congressPeeps.length; 
 
           if (matches.length > 0) {
             tooltip.transition()
