@@ -118,7 +118,6 @@ pre {
     }
 
 svg {
-    margin-top:10px;
     text-align: center; 
     font-family: Helvetica; 
     font-size: 12px; 
@@ -131,6 +130,7 @@ svg {
     }  
 
 .barChart {
+    margin-top:10px;
     text-align: center; 
     font-family: Helvetica; 
     font-size: 9px; 
