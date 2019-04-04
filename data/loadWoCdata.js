@@ -90,7 +90,6 @@ function barChart(womenOfColorRows) {
     })
     
 
-
   var xAxis = d3.axisBottom(xScale)
       .tickFormat(d3.format("d"));
       d3.select("#xAxis").call(xAxis);
