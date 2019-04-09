@@ -78,9 +78,10 @@
               .defer(d3.json, "data/usa.json")
               .awaitAll(function (error, dataArray) {
                 var womenOfColorRows = dataArray[0]; 
+                var ganttData = [];
         
                 womenOfColorRows.forEach(function (row) {
-                  var ranges = row['Dates of Service'].split(';'); 
+                  var ranges = row['Dates of Service'].split('; '); 
         
                   var inOfficePeriods = ranges.map(function(range) { 
                     var rangeAsArray = range.trim().split('-');      
@@ -96,14 +97,18 @@
                   var totalYearsInOffice = 0; 
                   inOfficePeriods.forEach(function(period) {   
                     var lengthOfPeriod = period[1] - period[0]; 
-                    totalYearsInOffice = totalYearsInOffice + lengthOfPeriod; 
+                    totalYearsInOffice = totalYearsInOffice + lengthOfPeriod;
+                    ganttData.push({
+                      name: row.Name,
+                      period: period
+                    });
                   });
 
                   // if (row["Name"] === "Ayanna Pressley") debugger;
         
                   row['Total Years in Office'] = totalYearsInOffice; 
                 });
-        
+              console.log(ganttData);
               var usaMapJSON = dataArray[1]; 
         
               var states = usaMapJSON.objects.states.geometries.map(function(geometry) {
