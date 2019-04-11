@@ -1,10 +1,12 @@
-var svgWidth = 800;
-var svgHeight = 500;
+var GANTT_BAR_HEIGHT=5; 
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 //Draw the Bar Chart
 function barChart(womenOfColorRows) {
- 
+  var svgHeight = womenOfColorRows.length * GANTT_BAR_HEIGHT;
+  //var svgHeight = 500;
+  var svgWidth = 800;
+
   var years = womenOfColorRows.flatMap(function (row) {
     var ranges = row['Dates of Service'].split(';'); 
 
@@ -46,7 +48,7 @@ function barChart(womenOfColorRows) {
   });
   var svg = d3.selectAll('.bar-chart')
     .attr("width", svgWidth)
-    .attr("height", svgHeight);
+    .attr("height", svgHeight + 30);
 
   var minYear = d3.min(years)
 
@@ -60,13 +62,13 @@ function barChart(womenOfColorRows) {
     .data(womenOfColorRows);
 
   bars.enter().append("rect")
-    .attr("height", 5)
+    .attr("height", GANTT_BAR_HEIGHT)
     .attr("width", function(d) {
       
       return xScale(minYear + (d["Total Years in Office"]));
     })
     .attr('y', function(d, i) {
-      return i * 10;
+      return i * GANTT_BAR_HEIGHT;
     })
     .attr('x', function(d, i) {
       return xScale(parseInt(d["Dates of Service"]))
@@ -77,22 +79,25 @@ function barChart(womenOfColorRows) {
     
     .on("mousemove", function(d) {
       var mouse = d3.mouse(document.body);
-      d3.select("#tooltip")
+      d3.select(".tooltip")
           .style("display", "inline-block")
-          .style("postion", "relative")
+          .style("position", "relative")
           .html("<div class='tooltip-title'>" + d["ASSOCIATION"] + "<br>" + " Association Type:  " + d["ASSOCIATION TYPE"] + "<br>" + " Founding Year:  " + d["FOUNDING YEAR"] + "<br>" + " Ending Year:  " + d["ENDING YEAR"] + "</br>" + "</div>")
           .style("left", mouse[0] + 20 + "px")
           .style("top", mouse[1] - 50 + "px");
     })
     .on("mouseout", function(d) {
-      d3.select("#tooltip")
+      d3.select(".tooltip")
           .style("display", "none")
     })
     
 
   var xAxis = d3.axisBottom(xScale)
       .tickFormat(d3.format("d"));
-      d3.select("#xAxis").call(xAxis);
+
+  d3.select("#x-axis").call(xAxis)
+  .attr("transform", "translate(0," + (svgHeight + 10) + ")");
+
 }
 
 //Load the data

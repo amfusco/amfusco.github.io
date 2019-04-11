@@ -12,10 +12,11 @@
                 margin-right: auto;
             }
 
-            svg {
+            svg.bar-chart{
                 display: block;
                 margin-left: auto;
                 margin-right: auto;
+                overflow: visible;
             }
 
             body {
@@ -33,7 +34,7 @@
  
     <!--Creating SVG Container for First Interactive Bar Chart (sort on click)-->
     <svg class="bar-chart" width="100%">
-        
+      <g id="x-axis"></g>  
     </svg>
 
     <script src="/data/loadWoCdata.js"></script>
