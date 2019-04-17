@@ -22,6 +22,51 @@ function barChart(womenOfColorRows) {
     });
   });
 
+
+  //var legendSVG = d3.select('.legend')
+    // .attr("width", 900)
+    // .attr("height", 150)
+    // .style("display", "inline-block")
+    // .style("border", '1px solid rgba(0,0,0,0.125)');
+
+
+  // const ethnicities = womenOfColorRows.map(({ Ethnicity }) => Ethnicity);
+  // const foo = ethnicities.reduce((memo, ethnicity) => {
+  //   return memo.includes(ethnicity) ? memo : [...memo, ethnicity]
+  // }, []);
+
+  //var categories = d3.nest()
+  //  .key(function(d) {
+  //    return d["Ethnicity"]
+   // })  
+  //  .entries(womenOfColorRows);
+
+  //var categoryNames = legendSVG.select("#categories").selectAll("text").data(categories);
+
+ // categoryNames.enter().append("text")
+  //  .text(function(d) {
+  //    return d.key;
+ //   })
+  //  .attr('y', function(d, i) {
+  //    return (i * 20) + 20;
+  //  })
+  //  .attr('dy', 12)
+  //  .attr('x', 120);
+
+//  var swatch = legendSVG.selectAll('rect')
+ //   .data(categories);
+
+//  swatch.enter().append("rect")
+  //  .attr("height", 12)
+  //  .attr("width", 12)
+  //  .attr('y', function (d, i) {
+  //    return (i * 20) + 20;
+  //  })
+  //  .attr('x', 100)
+  //  .attr("fill", function(d) {
+  //    return color(d.key);
+  //  });
+
   womenOfColorRows.forEach(function (row, index) {
     var ranges = row['Dates of Service'].split(';'); 
 

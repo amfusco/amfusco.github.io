@@ -8,6 +8,9 @@
         <script src="https://unpkg.com/topojson@3"></script>
         <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500" rel="stylesheet">
         <style>
+          body, body * {
+            font-family: Roboto;
+          }
           .tooltip {	
             position: absolute;
             text-align: center;
@@ -15,7 +18,7 @@
             padding: 10px;
             font-size: 12px;
             font-family: Roboto;
-            background-color: rgba(0, 0, 0, 0.75);
+            background-color: black;
             color: rgba(255, 255, 255, 0.9);
             border-radius: 8px;
             pointer-events: none;
@@ -53,11 +56,16 @@
           }
 
           svg.bar-chart{
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-                overflow: visible;
-            }
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: visible;
+          }
+
+          svg * {
+            font-weight: 300;
+            font-size: 12px;
+          }
 
         </style>
     </head>
@@ -66,17 +74,26 @@
         <h1>Women of Color in Congress</h1>
         <img src="WOC_Congress.jpg" x=0 y=0 height="300px" width="600px" class="center"/>
         <p>
-            Below, you will find data illustrating representations of women of color in Congress. 
-            This data encompasses representation from the first woman of color to serve to the present Congress. Patsy Mink, a Democrat from Hawaii was the first women of color to be elected to Congress in 1965. In January 2019, 12 freshmen women of color were sworn into Congress bringing the total number of congresswomen of color in American history to 79. The map below displays states that have been represented by women of color. The darkest states have been represented by women of color for the most years.
+            Below, you will find data illustrating representations of all women of color to serve in Congress in U.S. history to date. 
+            2015 marked 50 years since Patsy Mink, a Democrat from Hawaii, was the first women of color to be elected to Congress in 1965. In January 2019, 12 freshmen women of color were sworn into Congress bringing the total number of congresswomen of color in American history to 79. The map below displays states that have been represented by women of color. The darkest states have been represented by women of color for the most years. Mouse over each state to access all congresswomen of color who have represented that state, as well as their parties and years of service.  
         </p>
         <svg class=container id="my-map"> 
             
         </svg>
+        <p>
+          The Gantt chart below illustrates each member's timeline of service in Congress, as well as their ethnicities which are color coded. 
+          Each row represents one woman whose name, party, state, ethnicity, and years of service may be accessed by mousing over each bar. Presidential candidate and Senator Kamala Harris (CA) is the only red bar, because she identifies under two ethnic catergories; African American and Asian-Pacific American. Also notice the two purple bars beginning at 2018. These bars represent Reps. Deb Haaland and Sharice Davids, the first Native American women to serve in Congress. Notice the trend of the chart, which shows an increasing steepness over time. This is an indication that America's congresswomen are becoming increasingly diverse, and they are more diverse today than at any other point in history.
+      </p>
 
         <svg class="bar-chart" width="100%">
           <g id="x-axis"></g>  
         </svg>
+
+        <svg class="legend" width="100%">
+          <g id="categories"></g>
+        </svg>
     
+        <p id="credits">Visualization by Alanna Fusco; data from data.world/government/women-of-color-in-congress</p>
         <script src="/data/loadWoCdatatest.js"></script>
 
 
@@ -257,7 +274,7 @@
                   if (matches.length > 0) {
                     tooltip.transition()
                       .duration(100)
-                      .style("opacity", 0.9);
+                      .style("opacity", 1.0);
           
                   var mouse = d3.mouse(document.body);
                     tooltip.html(tooltipHtml)
