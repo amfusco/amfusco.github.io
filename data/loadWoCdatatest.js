@@ -22,9 +22,53 @@ function barChart(womenOfColorRows) {
     });
   });
 
+  var legendSVG = d3.select('.legend')
+    .attr("width", 900)
+    .attr("height", 150)
+    .style("display", "inline-block")
+    //.style("border", '1px solid rgba(0,0,0,0.125)');
+
+
+  var ethnicities = womenOfColorRows.map(function (row){
+    return row.Ethnicity
+  })
+
+  var categories = d3.nest()
+    .key(function(row) {
+      return row["Ethnicity"]
+    })
+    .entries(womenOfColorRows);
+
+  var categoryNames = legendSVG.select("#categories")
+    .selectAll("text")
+    .data(categories);
+
+ categoryNames.enter().append("text")
+   .text(function(category) {
+     return category.key;
+   })
+   .attr('y', function(category, index) {
+     return (index * 20) + 20;
+   })
+   .attr('dy', 12)
+   .attr('x', 120);
+
+ var swatch = legendSVG.selectAll('rect')
+   .data(categories);
+
+ swatch.enter().append("rect")
+   .attr("height", 12)
+   .attr("width", 12)
+   .attr('y', function (d, index) {
+     return (index * 20) + 20;
+   })
+   .attr('x', 100)
+   .attr("fill", function(d) {
+     return color(d.key);
+   });
+
   womenOfColorRows.forEach(function (row, index) {
     var ranges = row['Dates of Service'].split(';'); 
-
     var inOfficePeriods = ranges.map(function(range) { 
       var rangeAsArray = range.trim().split('-');      
       return rangeAsArray.map(function(year) {         
@@ -94,20 +138,20 @@ function barChart(womenOfColorRows) {
 
   bars.enter().append("rect")
     .attr("height", GANTT_BAR_HEIGHT)
-    .attr("width", function(d) {
-      return xScale(minYear + (d.range[1] - d.range[0]));
+    .attr("width", function(row) {
+      return xScale(minYear + (row.range[1] - row.range[0]));
     })
-    .attr('y', function(d, i) {
-      return d.number * GANTT_BAR_HEIGHT * 1.5;
+    .attr('y', function(row, i) {
+      return row.number * GANTT_BAR_HEIGHT * 1.5;
     })
-    .attr('x', function(d, i) {
-      return xScale(d.range[0])
+    .attr('x', function(row, i) {
+      return xScale(row.range[0])
     })
-    .attr("fill", function(d) {
-        return color(d["Ethnicity"].trim());
+    .attr("fill", function(row) {
+        return color(row["Ethnicity"].trim());
     })
-    .on("mousemove", function(d) {    
-      var tooltipHtml = "<b>" + d["Name"] + "</b> (" + d["Party"] + ", " + d["State"] + "; " + d["Ethnicity"] + ") " + d["Dates of Service"];
+    .on("mousemove", function(row) {    
+      var tooltipHtml = "<b>" + row["Name"] + "</b> (" + row["Party"] + ", " + row["State"] + "; " + row["Ethnicity"] + ") " + row["Dates of Service"];
 
       tooltip.transition()
         .duration(100)
@@ -120,10 +164,10 @@ function barChart(womenOfColorRows) {
       tooltip
         .html(tooltipHtml) 
         .style("white-space", "nowrap") 
-        .style("left", mouse[0] + "px") 
+        .style("left", (mouse[0] - 150) + "px") 
         .style("top", mouse[1] + "px"); 
     })
-    .on("mouseout", function(d) {
+    .on("mouseout", function() {
      
       tooltip.transition()
         .duration(100)
