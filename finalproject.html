@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>Women of Color in Congress Data</title>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <link rel="stylesheet" href="style.css" /> 
+        <script src="https://unpkg.com/topojson@3"></script>
+        <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500" rel="stylesheet">
+        <style>
+          body, body * {
+            font-family: Roboto;
+          }
+          .tooltip {	
+            position: absolute;
+            text-align: center;
+            line-height: 18px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: Roboto;
+            background-color: black;
+            color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            pointer-events: none;
+            font-weight: 200;
+          }
+          .center {
+            display: block; 
+            margin: 0 auto; 
+          }
+      
+          #my-map {
+            margin-top: 0px;
+            padding-left: calc(50% - 400px);
+          }
+          h1{
+            font-family: Roboto; 
+            font-weight: 300;
+            margin:  50px auto;
+            text-align: center;  
+            font-size: 1.5em; 
+          }
+          h2{
+            text-align: center;
+            margin: 50px;
+          }
+
+          #main {
+            max-width: 70%;
+            margin-top:0;
+            margin-bottom:0;
+            margin-left:auto;
+            margin-right:auto;
+          }
+
+          p {
+            font-family:Roboto;
+            line-height: 1.5em;
+            font-size: 1.15em;  
+            font-weight: 100;
+          }
+
+          svg.bar-chart{
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: visible;
+          }
+
+          svg * {
+            font-weight: 300;
+            font-size: 12px;
+          }
+
+        </style>
+    </head>
+    <body>
+        <div id="main">
+        <h1>Women of Color in Congress</h1>
+        <img src="WOC_Congress.jpg" x=0 y=0 height="300px" width="600px" class="center"/>
+        <p>
+            Below, you will find data visualizations of all women of color to serve in Congress in United States history to date. 
+            2015 marked 50 years since Patsy Mink, a Democrat from Hawaii, was the first woman of color to be elected to Congress in 1965. In the 2018 midterm elections, 12 freshmen women of color were elected to Congress bringing the total number of congresswomen of color in American history to 79. The map below displays states that have been represented by women of color. The darkest states have been represented by women of color for the most years. Hover over each state to access information of all congresswomen of color who have represented that state, as well as their parties and years of service. One interesting observation from this map is that several "blue" states (thought to be more progressive) have only been represented by 1 woman of color to date (MA, CT, NJ, DE, MD), in comparison to several "swing" states like Florida, Ohio, New Mexico, and Michigan which have each been represented by at least 3 women of color. Georgia and Texas, both traditionally "red" states, have been represented by 3 and 4 women of color respectively. 
+        </p>
+        <h2>Women of Color in Congress by State</h2>
+        <svg class=container id="my-map"> 
+            
+        </svg>
+        <p>
+          The Gantt chart below illustrates each member's timeline of service in Congress, as well as their ethnicities which are color coded. 
+          Each row represents one woman whose name, party, state, ethnicity, and years of service may be accessed by hovering over each bar. Presidential candidate and Senator Kamala Harris (CA) is the only red bar, because she identifies under two ethnic catergories; African American and Asian-Pacific American. Also notice the two purple bars beginning at 2018. These bars represent Reps. Deb Haaland and Sharice Davids, the first Native American women to serve in Congress. In 2018, 12 new women of color were elected to Congress. The trend of the chart, which shows an increasing steepness over time, indicates that America's congresswomen are becoming increasingly diverse, and they are more diverse today than at any other point in history.
+      </p>
+
+        <h2>Women of Color in Congress: Years of Service & Ethnicity </h2>
+        <svg class="bar-chart" width="100%">
+          <g id="x-axis"></g>  
+        </svg>
+
+        <svg class="legend" width="100%">
+          <g id="categories"></g>
+        </svg>
+    
+        <p id="credits">Visualization by Alanna Fusco; Data from data.world "Women of Color in Congress"</p>
+        <script src="/data/loadWoCdatatest.js"></script>
+
+
+        <script>
+            var width = 800;    
+            var height = 500; 
+        
+            var svg = d3.select("#my-map")
+              .attr("width", width + "px")
+              .attr("height", height + "px");
+        
+            d3.queue()
+              .defer(d3.csv, "data/women_of_color_congress.csv")
+              .defer(d3.json, "data/usa.json")
+              .awaitAll(function (error, dataArray) {
+                var womenOfColorRows = dataArray[0]; 
+                var ganttData = [];
+        
+                womenOfColorRows.forEach(function (row) {
+                  var ranges = row['Dates of Service'].split('; '); 
+        
+                  var inOfficePeriods = ranges.map(function(range) { 
+                    var rangeAsArray = range.trim().split('-');      
+                    return rangeAsArray.map(function(year) {         
+                      if (year.trim().toLowerCase() === 'present') {
+                        return 2019;
+                      } else {
+                        return parseInt(year); 
+                      }
+                    });
+                  });
+        
+                  var totalYearsInOffice = 0; 
+                  inOfficePeriods.forEach(function(period) {   
+                    var lengthOfPeriod = period[1] - period[0]; 
+                    totalYearsInOffice = totalYearsInOffice + lengthOfPeriod;
+                    ganttData.push({
+                      name: row.Name,
+                      period: period
+                    });
+                  });
+
+                  // if (row["Name"] === "Ayanna Pressley") debugger;
+        
+                  row['Total Years in Office'] = totalYearsInOffice; 
+                });
+              console.log(ganttData);
+              var usaMapJSON = dataArray[1]; 
+        
+              var states = usaMapJSON.objects.states.geometries.map(function(geometry) {
+                return geometry.id;
+              });
+        
+              var totalsPerState = {
+                ak: 0,
+                al: 0,
+                ar: 0,
+                az: 0,
+                ca: 0,
+                co: 0,
+                ct: 0,
+                dc: 0,
+                de: 0,
+                fl: 0,
+                ga: 0,
+                hi: 0,
+                ia: 0,
+                id: 0,
+                il: 0,
+                in: 0,
+                ks: 0,
+                ky: 0,
+                la: 0,
+                ma: 0,
+                md: 0,
+                me: 0,
+                mi: 0,
+                mn: 0,
+                ms: 0,
+                mt: 0,
+                nc: 0,
+                nd: 0,
+                ne: 0,
+                nh: 0,
+                nj: 0,
+                nm: 0,
+                nv: 0,
+                ny: 0,
+                oh: 0,
+                ok: 0,
+                or: 0,
+                pa: 0,
+                pr: 0,
+                ri: 0,
+                sc: 0,
+                sd: 0,
+                tn: 0,
+                tx: 0,
+                ut: 0,
+                va: 0,
+                vt: 0,
+                wa: 0,
+                wi: 0,
+                wv: 0,
+                wy: 0,
+              }
+        
+              
+              womenOfColorRows.forEach(function(row) {
+                var state = row["State"].toLowerCase(); 
+                totalsPerState[state] = totalsPerState[state] + row['Total Years in Office']; 
+              });
+          
+              var totals = Object.keys(totalsPerState).map(function(key) {
+                return totalsPerState[key]; 
+              });
+        
+              var domain = d3.extent(totals); 
+        
+              var colorScale = d3.scaleLinear()
+                .domain(domain)
+                .range(["rgb(150, 200, 150)", "rgb(0, 100, 0)"]);
+              
+              var geoJSON = topojson.feature(usaMapJSON, usaMapJSON.objects.states);
+        
+              var projection = d3.geoAlbersUsa()
+                .fitSize([width, height], geoJSON)
+        
+              var path = d3.geoPath()
+                .projection(projection);
+        
+              var stateShapesAndData = svg.selectAll("path")
+                .data(geoJSON.features);
+        
+              var tooltip = d3.select("body")
+                .append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+              var oldColor;
+        
+              stateShapesAndData.enter().append("path")
+                .attr("d", function(stateData) { 
+                  return path(stateData);
+                })
+                .attr("fill", function(stateData) { 
+                  var matches = womenOfColorRows.filter(function(row) {
+                    return row.State.toLowerCase() === stateData.id.toLowerCase();
+                  });
+        
+           
+                  if (matches.length > 0) {
+                    var sum = 0; 
+                    matches.forEach(function(congressLady) {
+                      var totalForHer = congressLady['Total Years in Office'];
+                      sum = sum + totalForHer;
+                    })
+                    return colorScale(sum); 
+                  } else {
+                    return "rgb(200, 200, 200)"; 
+                  }
+                })
+                .on('mouseover', function(stateData) {
+                  oldColor = d3.select(this).attr('fill'); 
+                  d3.select(this).attr('fill', '#FFFB14'); 
+                })
+                .on('mousemove', function(stateData) { 
+                  var matches = womenOfColorRows.filter(function(row) { 
+                    return row.State.toLowerCase() === stateData.id.toLowerCase();
+                  });
+        
+                  var stateAbbreviation = stateData.id;
+                 
+                  var congressPeeps = matches.map(function(match) { return match["Name"] + " (" + match["Party"] + ", " + match["Dates of Service"] + ")"; });
+                  var tooltipHtml = "<b>" + stateAbbreviation + "</b><hr>" + congressPeeps.join("<br>"); 
+                  var linesInTooltip = 2 + congressPeeps.length; 
+        
+                  if (matches.length > 0) {
+                    tooltip.transition()
+                      .duration(100)
+                      .style("opacity", 1.0);
+          
+                  var mouse = d3.mouse(document.body);
+                    tooltip.html(tooltipHtml)
+                    .style("left", mouse[0] + "px")
+                    .style("top", mouse[1] - 50 + "px");
+                  }
+        
+                })
+                .on('mouseout', function() { 
+                  tooltip.transition()
+                    .duration(100)
+                    .style("opacity", 0);
+        
+                  d3.select(this).attr('fill', oldColor);
+                });
+                
+            });
+          </script>
+      </div>  
+    </body>
+</html>
